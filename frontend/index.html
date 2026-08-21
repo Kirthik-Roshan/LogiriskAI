@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#07111f" />
+    <meta
+      name="description"
+      content="LogiRisk AI logistics disruption intelligence and resilient route planning dashboard"
+    />
+    <title>LogiRisk AI — Resilience Command Center</title>
+    <link rel="preconnect" href="https://tiles.openfreemap.org" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.css"
+    />
+    <link rel="stylesheet" href="/static/style.css" />
+  </head>
+  <body>
+    <div class="ambient ambient-one"></div>
+    <div class="ambient ambient-two"></div>
+
+    <div class="app-shell">
+      <header class="topbar">
+        <a class="brand" href="#" aria-label="LogiRisk AI home">
+          <span class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 32 32"><path d="M5 23V9l11-6 11 6v14l-11 6L5 23Z"/><path d="m10 19 4-7 4 4 4-7"/></svg>
+          </span>
+          <span>
+            <strong>LogiRisk</strong><b>AI</b>
+            <small>Resilience command center</small>
+          </span>
+        </a>
+
+        <div class="topbar-actions">
+          <span class="system-status"><i></i> Scenario engine online</span>
+          <button class="icon-button" id="themeButton" aria-label="Toggle map theme">
+            <svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9c0-.5 0-1-.1-1.5A7 7 0 0 1 13.5 3H12Z"/></svg>
+          </button>
+        </div>
+      </header>
+
+      <main>
+        <section class="hero">
+          <div class="eyebrow"><span></span> AI-powered supply chain intelligence</div>
+          <div class="hero-copy">
+            <div>
+              <h1>See the disruption.<br /><em>Choose the safer move.</em></h1>
+              <p>
+                Replay risk across your logistics corridor, understand where the chain breaks,
+                and compare a decision-ready alternate before dispatch.
+              </p>
+            </div>
+            <div class="hero-stat">
+              <span>Decision window</span>
+              <strong>&lt; 5 min</strong>
+              <small>from scenario to action</small>
+            </div>
+          </div>
+
+          <form class="route-planner" id="routeForm">
+            <label class="location-field">
+              <span class="field-dot origin-dot"></span>
+              <span class="field-copy">
+                <small>Origin</small>
+                <input id="originInput" name="origin" value="Ras Tanura" autocomplete="off" required />
+              </span>
+            </label>
+
+            <button class="swap-button" id="swapButton" type="button" aria-label="Swap origin and destination">
+              <svg viewBox="0 0 24 24"><path d="m7 7 3-3 3 3M10 4v12M17 17l-3 3-3-3m3 3V8"/></svg>
+            </button>
+
+            <label class="location-field">
+              <span class="field-dot destination-dot"></span>
+              <span class="field-copy">
+                <small>Destination</small>
+                <input id="destinationInput" name="destination" value="Mumbai" autocomplete="off" required />
+              </span>
+            </label>
+
+            <button class="analyze-button" id="analyzeButton" type="submit">
+              <span class="button-label">
+                <svg viewBox="0 0 24 24"><path d="M4 17 10 11l4 4 6-8"/><path d="M15 7h5v5"/></svg>
+                Analyze corridor
+              </span>
+              <span class="button-loader" aria-hidden="true"></span>
+            </button>
+          </form>
+
+          <div class="examples" aria-label="Example routes">
+            <span>Try a corridor</span>
+            <button type="button" data-origin="Ras Tanura" data-destination="Mumbai">Gulf → India</button>
+            <button type="button" data-origin="Fujairah" data-destination="Singapore">UAE → Singapore</button>
+            <button type="button" data-origin="Rotterdam" data-destination="Mundra">Europe → India</button>
+          </div>
+        </section>
+
+        <section class="workspace" id="workspace" aria-live="polite">
+          <article class="map-card panel">
+            <div class="panel-heading">
+              <div>
+                <div class="eyebrow compact"><span></span> Live route playback</div>
+                <h2>Where the chain is breaking</h2>
+                <p>Move, zoom, and scroll the map while the shipment approaches each risk signal.</p>
+              </div>
+              <div class="playback-state"><i></i><span id="playbackState">Playback active</span></div>
+            </div>
+
+            <div class="map-stage">
+              <div id="map" aria-label="Interactive logistics corridor map"></div>
+              <div class="map-loading" id="mapLoading">
+                <span></span>
+                <p>Building corridor intelligence…</p>
+              </div>
+
+              <div class="map-legend">
+                <span><i class="legend-line planned"></i> Planned</span>
+                <span><i class="legend-line safe"></i> Safest alternate</span>
+                <span><i class="legend-point risk"></i> Risk signal</span>
+              </div>
+
+              <div class="map-actions">
+                <button id="replayButton" type="button" title="Replay route">
+                  <svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.3-5.7L4 8.6"/><path d="M4 4v4.6h4.6"/></svg>
+                </button>
+                <button id="pauseButton" type="button" title="Pause playback">
+                  <svg class="pause-icon" viewBox="0 0 24 24"><path d="M8 5v14M16 5v14"/></svg>
+                  <svg class="play-icon" viewBox="0 0 24 24"><path d="m8 5 11 7-11 7V5Z"/></svg>
+                </button>
+                <button id="focusButton" type="button" title="Fit full route">
+                  <svg viewBox="0 0 24 24"><path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5"/></svg>
+                </button>
+              </div>
+
+              <div class="route-brief" id="routeBrief">
+                <div class="brief-topline">
+                  <span><i></i> Live route briefing</span>
+                  <small id="briefCounter">Signal 1 of 4</small>
+                </div>
+                <div class="brief-content">
+                  <div class="event-animation" id="eventAnimation" data-type="missile">
+                    <span class="event-core"></span>
+                    <span class="event-symbol" id="eventSymbol">➤</span>
+                    <span class="event-ring"></span>
+                  </div>
+                  <div>
+                    <span class="severity" id="briefSeverity">Critical scenario signal</span>
+                    <h3 id="briefTitle">Missile activity corridor</h3>
+                    <p id="briefDescription">Monitoring the next disruption point.</p>
+                  </div>
+                </div>
+                <div class="brief-progress"><span id="briefProgress"></span></div>
+              </div>
+
+              <div class="scenario-badge">Scenario intelligence • not verified live events</div>
+            </div>
+
+            <div class="map-footer">
+              <span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg> Signals are modelled for decision-support demonstration.</span>
+              <span class="map-interaction">Scroll to zoom • drag to move</span>
+            </div>
+          </article>
+
+          <aside class="decision-column">
+            <article class="decision-card panel">
+              <div class="decision-label"><span>AI recommendation</span><i id="confidenceValue">88% confidence</i></div>
+              <div class="decision-icon">
+                <svg viewBox="0 0 24 24"><path d="M5 12.5 9.2 17 19 7"/></svg>
+              </div>
+              <h2 id="decisionTitle">Take the safest alternate</h2>
+              <p id="decisionSummary">The green corridor avoids the modelled critical exposure zones.</p>
+              <button class="accept-button" id="acceptRouteButton" type="button">
+                <svg viewBox="0 0 24 24"><path d="M5 12.5 9.2 17 19 7"/></svg>
+                Preview green route
+              </button>
+            </article>
+
+            <article class="metrics-card panel">
+              <div class="section-title">
+                <div><span>Route comparison</span><small>Decision trade-offs</small></div>
+                <svg viewBox="0 0 24 24"><path d="M5 19V9M12 19V5M19 19v-7"/></svg>
+              </div>
+              <div class="risk-comparison">
+                <div>
+                  <span>Planned risk</span>
+                  <strong class="danger" id="primaryRisk">82</strong>
+                  <div class="risk-bar"><i style="--score: 82%"></i></div>
+                </div>
+                <svg viewBox="0 0 24 24"><path d="M5 12h14M14 7l5 5-5 5"/></svg>
+                <div>
+                  <span>Alternate risk</span>
+                  <strong class="success" id="alternateRisk">21</strong>
+                  <div class="risk-bar safe-bar"><i style="--score: 21%"></i></div>
+                </div>
+              </div>
+              <dl class="route-metrics">
+                <div><dt>Safe distance</dt><dd id="alternateDistance">—</dd></div>
+                <div><dt>ETA impact</dt><dd id="etaImpact">—</dd></div>
+                <div><dt>Signals avoided</dt><dd id="signalsAvoided">4 / 4</dd></div>
+              </dl>
+            </article>
+
+            <article class="signals-card panel">
+              <div class="section-title">
+                <div><span>Corridor signals</span><small id="signalSubtitle">4 issues mapped</small></div>
+                <span class="signal-count" id="signalCount">4</span>
+              </div>
+              <div class="signals-list" id="signalsList"></div>
+            </article>
+          </aside>
+        </section>
+
+        <section class="action-strip panel">
+          <div>
+            <span class="action-number">01</span>
+            <p><strong>Approve alternate</strong><small>Lock the green corridor before dispatch.</small></p>
+          </div>
+          <i></i>
+          <div>
+            <span class="action-number">02</span>
+            <p><strong>Clear counterparties</strong><small>Complete sanctions and vessel screening.</small></p>
+          </div>
+          <i></i>
+          <div>
+            <span class="action-number">03</span>
+            <p><strong>Confirm capacity</strong><small>Reserve terminal, carrier, and fuel windows.</small></p>
+          </div>
+        </section>
+      </main>
+
+      <footer>
+        <span>LogiRisk AI • Decision-support prototype</span>
+        <span>Map © OpenStreetMap contributors • OpenFreeMap</span>
+      </footer>
+    </div>
+
+    <div class="toast" id="toast" role="status"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
+    <script src="/static/script.js" defer></script>
+  </body>
+</html>

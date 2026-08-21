@@ -1,0 +1,12 @@
+.venv/
+venv/
+__pycache__/
+*.pyc
+node_modules/
+.env
+.env.*
+.git.backup/
+.git.old/
+.DS_Store
+.pytest_cache/
+.ruff_cache/
